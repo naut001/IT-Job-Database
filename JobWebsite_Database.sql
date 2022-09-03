@@ -993,3 +993,50 @@ begin
 end
 
 exec getSV 100
+
+_______________________________________________
+--------------------------TRIGGER----------------------------
+----------------1. Không thêm tài khoản ứng viên dưới 18 tuổi
+create trigger UngVien_age
+on UngVien
+for insert, update
+as
+begin
+declare @count int = 0
+select @count = count (*) from inserted
+where year(getdate())-year(inserted.NgaySinh) < 18
+if (@count > 0)
+begin
+print N'Bạn phải từ 18 tuổi trở lên'
+rollback tran
+end
+end
+--
+insert into UngVien ( HoTen, GioiTinh, NgaySinh, SDT,
+Email,MaThanhPho)
+values ('n',1,'2000-08-17',12,'a',12)
+go
+_____________________________________________________________
+------------------2.thêm tài khoản --> mã người dùng tự
+thêm
+create trigger ThemTaiKhoan
+on TaiKhoan
+after insert
+as
+begin
+declare @MaND int;
+declare @MaLoaiTK int;
+select @MaND = MaND from inserted
+select @MaLoaiTK=MaLoaiTK from inserted
+if @MaLoaiTK = '1'
+insert into CongTy (MaND)
+values (@MaND)
+if @MaLoaiTK = '0'
+insert into UngVien (MaND)
+values (@MaND)
+print N'Mã người dùng vừa thêm: ' + cast (@MaND as
+nvarchar (10))
+end
+--
+exec sp_ThemTaiKhoan 0,toilatuan,minhtuan
+go
